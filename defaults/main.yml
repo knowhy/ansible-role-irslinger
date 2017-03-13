@@ -1,0 +1,29 @@
+---
+
+out_pin: 27
+frequency: 38000
+duty_cycle: 0.5
+leading_pulse_duration: 9000
+leading_gap_duration: 4500
+one_pulse: 562
+zero_pulse: 562
+one_gap: 1688
+zero_gap: 562
+send_trailing_pulse: 1
+
+programs:
+  -
+    name: power
+    code: "01011110101000011111100000000111"
+  -
+    name: aux
+    code: "01011110101000011110100000010111"
+  -
+    name: cd
+    code: "01011110101000011010100001010111"
+  -
+    name: volume_down
+    code: "01011110101000011101100000100111"
+  -
+    name: volume_up
+    code: "01011110101000010101100010100111"

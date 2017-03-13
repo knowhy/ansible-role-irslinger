@@ -1,0 +1,70 @@
+---
+
+- name: Install build dependencies.
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - gcc
+    - make
+
+- name: Ensure git root directory is present.
+  file:
+    path: /var/git
+    state: directory
+
+- name: Checkout libpigpio repository.
+  git:
+    repo: https://github.com/joan2937/pigpio.git
+    dest: /var/git/pigpio
+  register: pigpio_repo
+
+- name: Build pigpio.
+  command: make
+  args:
+    chdir: /var/git/pigpio
+  when: pigpio_repo.changed
+
+- name: Install pigpio.
+  command: make install
+  args:
+    chdir: /var/git/pigpio
+  when: pigpio_repo.changed
+
+- name: Copy pigpio libs to /usr/lib
+  copy:
+    src: "/usr/local/lib/{{ item }}"
+    dest: "/usr/lib/{{ item }}"
+    remote_src: True
+  with_items:
+    - libpigpio.so
+    - libpigpiod_if.so
+    - libpigpiod_if2.so
+  when: pigpio_repo.changed
+
+- name: Checkout irslinger repository.
+  git:
+    repo: https://github.com/bschwind/ir-slinger.git
+    dest: /var/git/irslinger
+
+- name: Create source codes.
+  template:
+    src: template.h.j2
+    dest: "/var/git/irslinger/{{ item.name }}.c"
+  with_items: "{{ programs }}"
+  register: source_codes
+
+- name: Build executable(s).
+  command: "gcc {{ item.name }}.c -lm -lpigpio -pthread -lrt -o {{ item.name }}"
+  args:
+    chdir: /var/git/irslinger
+  with_items: "{{ programs }}"
+  when: source_codes.changed
+
+- name: Copy executable(s) to $PATH.
+  copy:
+    src: "/var/git/irslinger/{{ item.name }}"
+    dest: "/usr/local/bin/{{ item.name }}"
+    remote_src: True
+    mode: 0770
+  with_items: "{{ programs }}"
